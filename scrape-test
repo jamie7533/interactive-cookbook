@@ -1,0 +1,79 @@
+from recipe_scrapers import scrape_me
+from ytSearch import search_youtube
+#from parse_ingredients import parse_ingredient
+from ingredient_parser import parse_ingredient
+#from nltk.parse import ShiftReduceParser
+import spacy
+from spacy import displacy
+
+# nlp = spacy.load("en_core_web_sm")
+# sample_sentence = "Cover the baking dish tightly with aluminum foil and bake until the chicken and rice are cooked through, about 1 hour and 25 minutes"
+# doc = nlp(sample_sentence)
+
+# print ("{:<15} | {:<8} | {:<15} | {:<20}".format('Token','Relation','Head', 'Children'))
+# print ("-" * 70)
+
+# for token in doc:
+#   # Print the token, dependency nature, head and all dependents of the token
+#   print ("{:<15} | {:<8} | {:<15} | {:<20}"
+#          .format(str(token.text), str(token.dep_), str(token.head.text), str([child for child in token.children])))
+
+# scraper = scrape_me('https://www.spicetheplate.com/pork/korean-style-pan-fried-pork-belly/', wild_mode=True)
+# scraper = scrape_me('https://www.foodnetwork.com/recipes/ina-garten/meat-loaf-recipe-1921718')
+
+### GLOBAL VARIABLES ###
+scraper = None
+ingredients = None
+parsed_ingredients = []
+steps = None
+parsed_steps = None
+currentStep = 0
+#step = ["text", "ingredients", "tools", "duration"]
+def scrape(url):
+    global scraper, ingredients, parsed_ingredients, steps, parsed_steps
+    scraper = scrape_me(url, wild_mode=True)
+
+    ingredients = scraper.ingredients()
+    
+
+    #print(parse_ingredient(ingredients[0]))
+    steps = scraper.instructions_list()
+
+    for i in ingredients:
+        parsed_ingredients.append(parse_ingredient(i)) # if only a comment, remove from ingredients
+
+def answer(question):
+    pass
+
+def main():
+    #global scraper, ingredients, steps
+    commands = [""]
+    input_flag = 1
+    url = input("Please enter a url: ")
+    scrape(url)
+    print("Enter \'ingredients\' to get the list of ingredients")
+    print("Enter \'instructions\' to list all instructions")
+    print("Enter \'help\' for a list of commands")
+    while(input_flag == 1):
+       
+        user = input("Please enter one of the above or ask a question: ")
+        if user == 'ingredients':
+            print(parsed_ingredients)
+        elif user == 'instructions':
+            print(steps)
+        elif user == 'help':
+            print(commands)
+        else:
+            answer(user)
+        
+        cont = input("Do you want to continue y/n: ")
+
+        if cont == 'y':
+            continue
+        if cont == 'n':
+            print("Terminated")
+            inputflag -= 1
+            break
+
+if __name__ == '__main__':
+    main()
