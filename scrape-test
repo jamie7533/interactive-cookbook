@@ -5,21 +5,54 @@ from ingredient_parser import parse_ingredient
 #from nltk.parse import ShiftReduceParser
 import spacy
 from spacy import displacy
+from step import Step
 
-# nlp = spacy.load("en_core_web_sm")
-# sample_sentence = "Cover the baking dish tightly with aluminum foil and bake until the chicken and rice are cooked through, about 1 hour and 25 minutes"
-# doc = nlp(sample_sentence)
+nlp = spacy.load("en_core_web_sm")
+#sample_sentence = "Cover the baking dish tightly with aluminum foil and bake until the chicken and rice are cooked through, about 1 hour and 25 minutes"
+#sample_sentence = "In a large bowl, combine the ground chuck, onion mixture, bread crumbs, and eggs, and mix lightly with a fork"
+sample_sentence = "Cover the baking dish tightly with aluminum foil and bake until the chicken and rice are cooked through, about 1 hour and 25 minutes. A pan of hot water in the oven, under the meat loaf, will keep the top from cracking"
+doc = nlp(sample_sentence)
 
-# print ("{:<15} | {:<8} | {:<15} | {:<20}".format('Token','Relation','Head', 'Children'))
-# print ("-" * 70)
+print ("{:<15} | {:<8} | {:<15} | {:<20}".format('Token','Relation','Head', 'Children'))
+print ("-" * 70)
 
-# for token in doc:
-#   # Print the token, dependency nature, head and all dependents of the token
-#   print ("{:<15} | {:<8} | {:<15} | {:<20}"
-#          .format(str(token.text), str(token.dep_), str(token.head.text), str([child for child in token.children])))
-
+for token in doc:
+  # Print the token, dependency nature, head and all dependents of the token
+  print ("{:<15} | {:<8} | {:<15} | {:<20}"
+         .format(str(token.text), str(token.dep_), str(token.head.text), str([child for child in token.children])))
 # scraper = scrape_me('https://www.spicetheplate.com/pork/korean-style-pan-fried-pork-belly/', wild_mode=True)
 # scraper = scrape_me('https://www.foodnetwork.com/recipes/ina-garten/meat-loaf-recipe-1921718')
+
+# divide larger steps into sentences
+# for each sentence, use the dependency parser
+# if there is no 'nsubj' (token.dep_) and a ROOT is found, that ROOT is an imperative/command --> therefore the sentence is a step
+# ----- ROOT = cooking action
+# if we find one with 'nsub', append it to the last step so far
+
+### testing
+# long_step = "In a large bowl, combine the ground chuck, onion mixture, bread crumbs, and eggs, and mix lightly with a fork. Don't mash or the meat loaf will be dense. Shape the mixture into a rectangular loaf on a sheet pan covered with parchment paper. Spread the ketchup evenly on top. Bake for 1 to 1 1/4 hours, until the internal temperature is 160 degrees F and the meat loaf is cooked through. (A pan of hot water in the oven, under the meat loaf, will keep the top from cracking.) Serve hot."
+# shorter_steps = long_step.split('.')
+# annotated_steps = []
+# for step in shorter_steps:
+#     annotated_step = Step(text=step)
+#     annotated_step.parse_text = nlp(step)
+#     action = None
+#     nsubj_exists = False
+#     # lst_relations = [str(token.dep_) for token in doc]
+#     # if 'nsubj' in lst_relations:
+#     #     # append to previous step
+#     # else:
+        
+#     #     # find root, add to list of steps
+#     for token in doc:
+#         relation = str(token.dep_)
+#         if relation == 'nsubj': 
+#             nsubj_exists = True
+#             break
+#         if relation == 'ROOT': 
+#             action = str(token.text)
+    
+#     if nsubj_exists
 
 ### GLOBAL VARIABLES ###
 scraper = None
@@ -34,7 +67,6 @@ def scrape(url):
     scraper = scrape_me(url, wild_mode=True)
 
     ingredients = scraper.ingredients()
-    
 
     #print(parse_ingredient(ingredients[0]))
     steps = scraper.instructions_list()
