@@ -47,7 +47,19 @@ def answer(question):
 
 def main():
     #global scraper, ingredients, steps
-    commands = [""]
+    #create regex for commands that have inputs
+    commands = {"ingredients": "get list of ingredients", 
+                "instructions": "get list of instructions", 
+                "help": "get list of commands",
+                "substution [ingredient]": "get possible substutions for an ingredient", 
+                "how do I do [action]": "get link to youtube tutorial",
+                "how much [ingredient]": "get quantity needed for ingredient",
+                "what is [ingredient/tool]": "get image of query", #maybe dictionary entry?/image search
+                "next": "show the next step",
+                "previous": "show the previous step",
+                "repeat": "show the current step",
+                "start over": "go to the first step",
+                "stop": "exit the current recipe"}#add further commands as needed 
     input_flag = 1
     url = input("Please enter a url: ")
     scrape(url)
@@ -56,7 +68,7 @@ def main():
     print("Enter \'help\' for a list of commands")
     while(input_flag == 1):
        
-        user = input("Please enter one of the above or ask a question: ")
+        user = input("Please enter a command, type help for a list of available commands: ")
         if user == 'ingredients':
             print(parsed_ingredients)
         elif user == 'instructions':
