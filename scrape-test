@@ -1,11 +1,13 @@
 from recipe_scrapers import scrape_me
-from ytSearch import search_youtube
+from ytSearch import search_youtube, search_google
 #from parse_ingredients import parse_ingredient
 from ingredient_parser import parse_ingredient
 #from nltk.parse import ShiftReduceParser
 import spacy
 from spacy import displacy
 from step import Step
+import re
+
 
 substutions = {
     'Allspice': {'Amount': '1 teaspoon', 'Substitution': '1/2 teaspoon cinnamon, 1/4 teaspoon ginger, and 1/4 teaspoon cloves'},
@@ -40,7 +42,7 @@ substutions = {
     'Creme fraiche': {'Amount': '1 cup', 'Substitution': 'Combine 1 cup of heavy cream and 1 tablespoon of plain yogurt. Let stand for 6 hours at room temperature'},
     'Egg': {'Amount': '1 whole (3 tablespoons or 1.7 oz)', 'Substitution': '2 1/2 tablespoons of powdered egg substitute plus 2 1/2 tablespoons water OR 1/4 cup liquid egg substitute OR 1/4 cup silken tofu pureed OR 3 tablespoons mayonnaise OR half a banana mashed with 1/2 teaspoon baking powder OR 1 tablespoon powdered flax seed soaked in 3 tablespoons water'},
     'Evaporated milk': {'Amount': '1 cup', 'Substitution': '1 cup light cream'},
-    'Farmer\'s cheese': {'Amount': '8 ounces', 'Substitution': '8 ounces dry cottage cheese OR 8 ounces creamed cottage cheese, drained'},
+    'Farmers cheese': {'Amount': '8 ounces', 'Substitution': '8 ounces dry cottage cheese OR 8 ounces creamed cottage cheese, drained'},
     'Baking fats': {'Amount': '1 cup', 'Substitution': '1 cup applesauce OR 1 cup fruit puree'},
     'Flour': {'Amount': '1 cup', 'Substitution': 'for bread: 1 cup all-purpose flour minus 2 tablespoons. For a cake: 1 cup all-purpose flour plus 1 teaspoon wheat gluten'},
     'self-rising Flour': {'Amount': '1 cup', 'Substitution': '7/8 cup all-purpose flour plus 1 1/2 teaspoons baking powder and 1/2 teaspoon of salt'},
@@ -220,9 +222,57 @@ def parse_steps(instructions):
             final_steps.append(Step(text=annotated_step.text, ingredients=ingredients_name))
     parsed_steps = final_steps
     
+#interaction outside of navigation and recipe retreval 
+#add current step interaction
+def answer(question: str, current_step: int)->str:
+    how_to = r"(?i)how to (.*)"
+    substute_for = r"(?i)substute for (.*)"
 
-def answer(question):
-    pass
+    #how to questions
+    result = re.search(how_to, question)
+    if result: 
+        if "that" in result.group(1):
+            if len(parsed_steps[current_step].actions) > 0:
+                if len(parsed_steps[current_step].ingredients) > 0:
+                    return "Here is a how to video" + search_youtube("how to " + parsed_steps[current_step].actions[0] + " " + parsed_steps[current_step].ingredients[0])
+                elif len(parsed_steps[current_step].tools) > 0:
+                    return "Here is a how to video" + search_youtube("how to " + parsed_steps[current_step].actions[0] + " " + parsed_steps[current_step].tools[0])
+                else:
+                    return "Here is a how to video" + search_youtube("how to " + parsed_steps[current_step].text)
+            else:
+                return "Here is a how to video" + search_youtube("how to " + parsed_steps[current_step].text)
+        else:
+            return "Here is a how to video" + search_youtube("how to " + result.group(1))
+    
+    #what is questions
+    if "what is" in question.lower():
+        return "This may answer your question " + search_google(question)
+    
+    #substution questions
+    result = re.search(substute_for, question)
+    if result: 
+        sub = substutions.get(result.group(1).capitalize(), None)
+        if sub:
+            return "You can substute " + sub['Amount'] + " for " + sub['Substution']
+        else:
+            return "I'm not sure if that can be substutied, but this may help " + search_google(question)
+    
+    #Current Step Questions
+
+    #temperature questions
+    if 'temperature' in question.lower:
+        if len(parsed_ingredients[current_step].temp) > 0:
+            return parsed_ingredients[current_step].temp + " degrees"
+        else:
+            return "I'm not sure, sorry."
+    
+    #How much
+
+    #How long
+
+    #When is it done
+    return
+
 
 def main():
     #global scraper, ingredients, steps
