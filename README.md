@@ -1,4 +1,5 @@
 # interactive-cookbook
+* https://github.com/jamie7533/interactive-cookbook
 * Run `recipe-bot.py` and enter a recipe url after the prompt
 * Commands include:
    * navigational: 'start', 'next', 'back', 'repeat', 'go to step n'
