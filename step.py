@@ -159,6 +159,7 @@ class Step:
         self.actions = self.verbs()
         self.ingredients = self.dobj()
         self.tools = self.pobj()
+        self.endWhen = self.get_step_end()
         self.time = self.get_step_time()
         self.temp = self.get_temperature()
 
@@ -183,6 +184,15 @@ class Step:
         #find mentioned tools
         pattern = re.compile('|'.join(kitchen_tools))
         return [match.group(0) for match in re.finditer(pattern, self.text)]
+
+    def get_step_end(self):
+        end = ''
+        endWords = ['until','once']
+        for word in endWords:
+            if word in self.text:
+                end = word + " " + self.text.split(word)[-1] 
+        return end
+
     
     def get_step_time(self):
         time = ""

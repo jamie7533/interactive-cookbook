@@ -14,9 +14,12 @@ def search_google(query: str) -> str:
     url = f"https://www.google.com/search?q={query}&num=1"
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "lxml")
-    link = soup.find('div', {"class": "egMi0 kCrYT"}).a['href']
-    link = link.split("&")[0]
-    link = link.split("=")[1]
-    return link
+    try:
+        link = soup.find('div', {"class": "egMi0 kCrYT"}).a['href']
+        link = link.split("&")[0]
+        link = link.split("=")[1]
+        return link
+    except:
+        return url
 
 

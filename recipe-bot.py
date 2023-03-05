@@ -1,15 +1,11 @@
 from recipe_scrapers import scrape_me
 from ytSearch import search_youtube, search_google
-#from parse_ingredients import parse_ingredient
 from ingredient_parser import parse_ingredient
-#from nltk.parse import ShiftReduceParser
-import spacy
-from spacy import displacy
 from step import Step
 import re
 
 
-substutions = {
+substitutions = {
     'Allspice': {'Amount': '1 teaspoon', 'Substitution': '1/2 teaspoon cinnamon, 1/4 teaspoon ginger, and 1/4 teaspoon cloves'},
     'Arrowroot starch': {'Amount': '1 teaspoon', 'Substitution': '1 tablespoon flour OR 1 teaspoon cornstarch'},
     'Baking mix': {'Amount': '1 cup', 'Substitution': '1 cup pancake mix'},
@@ -99,69 +95,6 @@ substutions = {
     'Yogurt': {'Amount': '1 cup', 'Substitution': '1 cup sour cream OR 1 cup buttermilk OR 1 cup sour milk'}
 }
 
-
-
-nlp = spacy.load("en_core_web_sm")
-#sample_sentence = "Cover the baking dish tightly with aluminum foil and bake until the chicken and rice are cooked through, about 1 hour and 25 minutes"
-#sample_sentence = "In a large bowl, combine the ground chuck, onion mixture, bread crumbs, and eggs, and mix lightly with a fork"
-#sample_sentence = "Cover the baking dish tightly with aluminum foil and bake until the chicken and rice are cooked through, about 1 hour and 25 minutes. A pan of hot water in the oven, under the meat loaf, will keep the top from cracking"
-sample_sentence = "Bake for 1 to 1 1/4 hours until the internal temperature is 160 and the loaf is happy" #cooked"#, until the internal temperature is 160 degrees F and the meat loaf is cooked through."# (A pan of hot water in the oven, under the meat loaf, will keep the top from cracking.)"
-doc = nlp(sample_sentence)
-
-print ("{:<15} | {:<8} | {:<15} | {:<20}".format('Token','Relation','Head', 'Children'))
-print ("-" * 70)
-
-for token in doc:
-  # Print the token, dependency nature, head and all dependents of the token
-  print ("{:<15} | {:<8} | {:<15} | {:<20}"
-         .format(str(token.text), str(token.dep_), str(token.head.text), str([child for child in token.children])))
-# scraper = scrape_me('https://www.spicetheplate.com/pork/korean-style-pan-fried-pork-belly/', wild_mode=True)
-# scraper = scrape_me('https://www.foodnetwork.com/recipes/ina-garten/meat-loaf-recipe-1921718')
-
-# divide larger steps into sentences
-# for each sentence, use the dependency parser
-# if there is no 'nsubj' (token.dep_) and a ROOT is found, that ROOT is an imperative/command --> therefore the sentence is a step
-# ----- ROOT = cooking action
-# if we find one with 'nsub', append it to the last step so far
-
-### testing
-# long_step = "In a large bowl, combine the ground chuck, onion mixture, bread crumbs, and eggs, and mix lightly with a fork. Don't mash or the meat loaf will be dense. Shape the mixture into a rectangular loaf on a sheet pan covered with parchment paper. Spread the ketchup evenly on top. Bake for 1 to 1 1/4 hours, until the internal temperature is 160 degrees F and the meat loaf is cooked through. (A pan of hot water in the oven, under the meat loaf, will keep the top from cracking.) Serve hot."
-# shorter_steps = long_step.split('.')
-# final_steps = []
-# carry_over = ""
-# ingredients = []
-
-# for i, step in enumerate(shorter_steps):
-#     annotated_step = Step(text=step + carry_over, ingredients = ingredients)
-#     action = None
-#     nsubj_exists = False
-        
-#     # find root, add to list of steps
-#     for token in annotated_step.parse:
-#         relation = str(token.dep_)
-#         if relation == 'nsubj':  # if not an imperative/command sentence
-#             print('nsubj: ', token)
-#             nsubj_exists = True
-#             break
-#         if relation == 'ROOT': 
-#             print('ROOT: ', token)
-#             action = str(token.text)
-    
-#     if nsubj_exists:
-#         if i == 0:  # if not a command and the very first sentence
-#             carry_over = annotated_step.text  # save it for the next step
-#         else:
-#             # recreate the Step object for final_steps[i - 1]
-#             print(annotated_step.text)
-#             print(i, final_steps)
-#             new_text = final_steps[-1].text + annotated_step.text 
-#             final_steps[-1] = Step(text=new_text, ingredients = ingredients)
-#     else:
-#         final_steps.append(annotated_step)
-
-# for step in final_steps:
-#     print(step.text)
-
 ### GLOBAL VARIABLES ###
 scraper = None
 ingredients = None
@@ -176,13 +109,10 @@ def scrape(url):
 
     ingredients = scraper.ingredients()
 
-    #steps = scraper.instructions_list()
-
     for i in ingredients:
         ingredient_parse = parse_ingredient(i)
         parsed_ingredients.append(ingredient_parse) # if only a comment, remove from ingredients
         ingredients_name.append(ingredient_parse["name"])
-    
     parse_steps(scraper.instructions())
 
     steps = [s.text for s in parsed_steps]
@@ -194,10 +124,10 @@ def parse_steps(instructions):
     shorter_steps = [step for step in shorter_steps if len(step) > 0]
     final_steps = []
     carry_over = ""
+    print("Processing recipe steps")
     for i, step in enumerate(shorter_steps):
         annotated_step = Step(text=(step + " " +carry_over).strip(), ingredients = ingredients_name)
         nsubj_exists = False
-        print(str(annotated_step.text))
         pos = str(annotated_step.parse[0].pos_) # check if first word is a verb
         if pos != 'VERB':
             # find root, add to list of steps
@@ -212,21 +142,23 @@ def parse_steps(instructions):
                     carry_over = annotated_step.text  # save it for the next step
                 else:
                     # recreate the Step object for final_steps[i - 1]
-                    print(annotated_step.text)
-                    print(i, final_steps)
-                    new_text = final_steps[-1].text + annotated_step.text 
+                    # print(annotated_step.text)
+                    new_text = final_steps[-1].text + "; " + annotated_step.text 
                     final_steps[-1] = Step(text=new_text, ingredients = ingredients_name)
             else:
                 final_steps.append(Step(text=annotated_step.text, ingredients=ingredients_name))
+                print(annotated_step.text)
         else:
             final_steps.append(Step(text=annotated_step.text, ingredients=ingredients_name))
+            print(annotated_step.text)
     parsed_steps = final_steps
+    print("Finished")
     
 #interaction outside of navigation and recipe retreval 
 #add current step interaction
 def answer(question: str, current_step: int)->str:
     how_to = r"(?i)how to (.*)"
-    substute_for = r"(?i)substute for (.*)"
+    substitute_for = r"(?i)substitute for (.*)"
 
     #how to questions
     result = re.search(how_to, question)
@@ -234,98 +166,137 @@ def answer(question: str, current_step: int)->str:
         if "that" in result.group(1):
             if len(parsed_steps[current_step].actions) > 0:
                 if len(parsed_steps[current_step].ingredients) > 0:
-                    return "Here is a how to video" + search_youtube("how to " + parsed_steps[current_step].actions[0] + " " + parsed_steps[current_step].ingredients[0])
+                    return "Here is a how to video " + search_youtube("how to " + parsed_steps[current_step].actions[0] + " " + parsed_steps[current_step].ingredients[0])
                 elif len(parsed_steps[current_step].tools) > 0:
-                    return "Here is a how to video" + search_youtube("how to " + parsed_steps[current_step].actions[0] + " " + parsed_steps[current_step].tools[0])
+                    return "Here is a how to video " + search_youtube("how to " + parsed_steps[current_step].actions[0] + " " + parsed_steps[current_step].tools[0])
                 else:
-                    return "Here is a how to video" + search_youtube("how to " + parsed_steps[current_step].text)
+                    return "Here is a how to video " + search_youtube("how to " + parsed_steps[current_step].text)
             else:
-                return "Here is a how to video" + search_youtube("how to " + parsed_steps[current_step].text)
+                return "Here is a how to video " + search_youtube("how to " + parsed_steps[current_step].text)
         else:
-            return "Here is a how to video" + search_youtube("how to " + result.group(1))
+            return "Here is a how to video " + search_youtube("how to " + result.group(1))
     
     #what is questions
-    if "what is" in question.lower():
+    if "what is" in question:
         return "This may answer your question " + search_google(question)
     
-    #substution questions
-    result = re.search(substute_for, question)
+    #substitution questions
+    result = re.search(substitute_for, question)
     if result: 
-        sub = substutions.get(result.group(1).capitalize(), None)
+        sub = substitutions.get(result.group(1).capitalize(), None)
         if sub:
-            return "You can substute " + sub['Amount'] + " for " + sub['Substution']
+            return "You can substitute " + sub['Amount'] + " for " + sub['Substitution']
         else:
-            return "I'm not sure if that can be substutied, but this may help " + search_google(question)
+            return "I'm not sure if that can be substituted, but this may help " + search_google(question)
     
     #Current Step Questions
 
     #temperature questions
-    if 'temperature' in question.lower:
-        if len(parsed_ingredients[current_step].temp) > 0:
-            return parsed_ingredients[current_step].temp + " degrees"
+    if 'temperature' in question:
+        if len(parsed_steps[current_step].temp) > 0:
+            return parsed_steps[current_step].temp + " degrees"
         else:
-            return "I'm not sure, sorry."
+            return "There is no temperature for this step."
     
     #How much
-
+    if 'how much' in question or 'how many' in question:
+        for ingredient in parsed_ingredients:
+            if ingredient['name'].lower() in question and len(ingredient['name']) > 1:
+                return ingredient['sentence']
+        for ingredient in parsed_ingredients:
+            if ingredient['name'].lower().split(" ")[-1] in question and len(ingredient['name']) > 1:
+                return ingredient['sentence']
+        return "I'm not sure about that ingredient."
+    
     #How long
-
+    if 'how long' in question:
+        if len(parsed_steps[current_step].time) > 0:
+            return parsed_steps[current_step].time
+        else:
+            return "I'm not sure about that."
     #When is it done
-    return
+    if 'when' in question and 'done' in question:
+        if len(parsed_steps[current_step].endWhen) > 0:
+            return parsed_steps[current_step].endWhen
+        else:
+            return "There is no indication of when this step is finished, following the instruction in the step should be sufficient."
+
+    return "I didn't understand your question, please ask another."
 
 
 def main():
-    #global scraper, ingredients, steps
-    #create regex for commands that have inputs
-    #make commands more vague to handle natural conversation
-    #navigational needs next, and go to n'th step
-    #for substutions if we dont have it in the dictionary return a google search for the ingredient
-    commands = {"ingredients": "get list of ingredients", 
-                "instructions": "get list of instructions", 
-                "help": "get list of commands",
-                "substution [ingredient]": "get possible substutions for an ingredient", 
-                "how do I do [action]": "get link to youtube tutorial",
-                "how much [ingredient]": "get quantity needed for ingredient",
-                "what is [ingredient/tool]": "get image of query", #maybe dictionary entry?/image search
-                "next": "show the next step",
-                "previous": "show the previous step",
-                "repeat": "show the current step",
-                "start OR start over": "go to the first step",
-                "stop": "exit the current recipe"}#add further commands as needed 
+    commands = ["Start/Start over: Starts the recipe from the first step", 
+                "Next: Prints the next step",
+                "Back: Prints the previous step",
+                "Repeat: Prints the current step", 
+                "Go to step <Step Number>: Prints the specified step", 
+                "Ingredients: Prints a list of ingredients", 
+                "Instructions: Prints a list of instructions",
+                "Help: Prints this list of commands",
+                "How to <Action>: Gives a Youtube link to a how to video",
+                "What is <Tool/Ingredient>: Gives a link to a search result",
+                "How much/many <Ingredient>: Tells how much of the ingredient is needed",
+                "What temperature: Tells the temperature for the current step",
+                "How long: Tells the length of the current step", 
+                "When is it done: Tells the sign to look for",
+                "What can I substitute for <Ingredient>: Gives potential substutions"]
     input_flag = 1
-    url = input("Please enter a url: ")
+    url = input("Hello, this is RecipeBot. Please enter a url for a recipe: ")
     scrape(url)
-    print("Enter \'ingredients\' to get the list of ingredients")
-    print("Enter \'instructions\' to list all instructions")
     print("Enter \'help\' for a list of commands")
+    print("Enter \'Start\' to start the recipe from the first step")
 
-    currentStep = 0
+    current_step = 0
+
     while(input_flag == 1):
        
-        user = input("Please enter a command, type help for a list of available commands: ")
+        user = input("Please enter a command, type help for a list of available commands: ").lower().strip()
         if "start" in user:
-            currentStep = 0
-            print(steps[currentStep])
-        if user == "next":
-            currentStep += 1
-            print(steps[currentStep])
-        if user == 'ingredients':
-            print(ingredients)
-        elif user == 'instructions':
-            print(steps)
-        elif user == 'help':
-            print(commands)
-        else:
-            answer(user)
-        
-        cont = input("Do you want to continue y/n: ")
+            current_step = 0
+            print("Step " + str(current_step + 1) + ". " + steps[current_step])
+        elif user == "next":
+            if current_step == len(steps) - 1:
+                print("This is the last step")
+            else:
+                current_step += 1
+            print("Step " + str(current_step + 1) + ". " + steps[current_step])
+        elif user == "back":
+            if current_step == 0:
+                print("This is the first step")
+            else:
+                current_step -= 1
+            print("Step " + str(current_step + 1) + ". " + steps[current_step])
+        elif user == "repeat":
+            print("Step " + str(current_step + 1) + ". " + steps[current_step])
+        elif "step" in user:
+            try:
+                stepNum = int(user.strip().split(" ")[-1])
+            
+                if 1 <= stepNum <= len(steps):
+                    current_step = stepNum - 1  # get the 'n' from "step n"
 
-        if cont == 'y':
-            continue
-        if cont == 'n':
-            print("Terminated")
-            inputflag -= 1
+                    print("Step " + str(current_step + 1) + '. ' + steps[current_step])
+                else:
+                    print("That step doesn't exist")
+            except:
+                print("That step doesn't exist")
+        elif user == 'ingredients':
+            for i, ing in enumerate(ingredients):
+                print(str(i + 1) + '. ', ing)
+        elif user == 'instructions':
+            for i, step in enumerate(steps):
+                print(str(i + 1) + '. ', step)
+        elif user == 'help':
+            for i, command in enumerate(commands):
+                print(str(i + 1) + '. ', command)
+        elif user == 'stop':
+            print('Terminated')
+            input_flag = 0
             break
+        else:
+            print(answer(user, current_step))
+        
+        
 
 if __name__ == '__main__':
     main()
