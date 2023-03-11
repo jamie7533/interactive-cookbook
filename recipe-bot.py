@@ -3,97 +3,10 @@ from ytSearch import search_youtube, search_google
 from ingredient_parser import parse_ingredient
 from step import Step
 import re
+import random
 
+from data import substitutions, veg_substitutes, meats, spices, cuisine_spices,cuisine_meats, healthy_subs, unhealthy_subs
 
-substitutions = {
-    'Allspice': {'Amount': '1 teaspoon', 'Substitution': '1/2 teaspoon cinnamon, 1/4 teaspoon ginger, and 1/4 teaspoon cloves'},
-    'Arrowroot starch': {'Amount': '1 teaspoon', 'Substitution': '1 tablespoon flour OR 1 teaspoon cornstarch'},
-    'Baking mix': {'Amount': '1 cup', 'Substitution': '1 cup pancake mix'},
-    'Baking powder': {'Amount': '1 teaspoon', 'Substitution': '1/4 teaspoon baking soda plus 1/2 teaspoon cream of tartar OR 1/4 teaspoon baking soda plus 1/2 cup buttermilk (decrease liquid in recipe by 1/2 cup)'},
-    'Baking soda': {'Amount': '1 teaspoon', 'Substitution': '4 teaspoons baking powder OR 1 teaspoon potassium bicarbonate and 1/3 teaspoon salt. NOTE: If the recipe calls for an acidic liquid such as sour cream, yogurt, buttermilk, vinegar, molasses, or citrus juice, you should replace it with the same amount of whole milk'},
-    'Beer': {'Amount': '1 cup', 'Substitution': '1 cup nonalcoholic beer OR 1 cup chicken broth'},
-    'Brandy': {'Amount': '1/4 cup', 'Substitution': '1 teaspoon imitation brandy extract plus enough water to make 1/4 cup'},
-    'Bread crumbs': {'Amount': '1 cup', 'Substitution': '1 cup cracker crumbs OR 1 cup matzo meal OR 1 cup ground oats'},
-    'Beef broth': {'Amount': '1 cup', 'Substitution': '1 bouillon cube plus 1 cup boiling water OR 1 tablespoon soy sauce plus enough water to make 1 cup OR 1 cup vegetable broth'},
-    'Chicken broth': {'Amount': '1 cup', 'Substitution': '1 bouillon cube plus 1 cup boiling water OR 1 tablespoon soy sauce plus enough water to make 1 cup OR 1 cup vegetable broth'},
-    'Brown sugar': {'Amount': '1 cup, packed', 'Substitution': '1 cup white sugar plus 1/4 cup molasses and decrease the liquid in recipe by 1/4 cup OR 1 cup white sugar OR 1 1/4 cups confectioners\' sugar'},
-    'Salted Butter': {'Amount': '1 cup', 'Substitution': '1 cup margarine OR 1 cup shortening plus 1/2 teaspoon salt OR 7/8 cup vegetable oil plus 1/2 teaspoon salt OR 7/8 cup lard plus 1/2 teaspoon salt'},
-    'Unsalted Butter': {'Amount': '1 cup', 'Substitution': '1 cup shortening OR 7/8 cup vegetable oil OR 7/8 cup lard'},
-    'Buttermilk': {'Amount': '1 cup', 'Substitution': '1 cup yogurt OR 1 tablespoon lemon juice or vinegar plus enough milk to make 1 cup'},
-    'Cheddar cheese': {'Amount': '1 cup shredded', 'Substitution': '1 cup shredded Colby cheddar OR 1 cup shredded Monterey Jack cheese'},
-    'Chervil': {'Amount': '1 tablespoon chopped fresh', 'Substitution': '1 tablespoon chopped fresh parsley'},
-    'Chicken base': {'Amount': '1 tablespoon', 'Substitution': '1 cup canned or homemade chicken broth or stock. Reduce liquid in recipe by 1 cup'},
-    'Semisweet chocolate': {'Amount': '1 ounce', 'Substitution': '1 (1-ounce) square of unsweetened chocolate plus 4 teaspoons sugar OR 1 ounce semisweet chocolate chips plus 1 teaspoon shortening'},
-    'Unsweetened chocolate': {'Amount': '1 ounce', 'Substitution': '3 tablespoons unsweetened cocoa plus 1 tablespoon shortening or vegetable oil'},
-    'Cocoa': {'Amount': '1/4 cup', 'Substitution': '1 (1-ounce) square unsweetened chocolate'},
-    'Condensed cream of mushroom soup': {'Amount': '1 (10.75-ounce) can', 'Substitution': '1 (10.75-ounce) can condensed cream of celery, cream of chicken, or golden mushroom soup'},
-    'Corn syrup': {'Amount': '1 cup', 'Substitution': '1 1/4 cup white sugar plus 1/3 cup water OR 1 cup honey OR 1 cup light treacle syrup'},
-    'Cottage cheese': {'Amount': '1 cup', 'Substitution': '1 cup farmer\'s cheese OR 1 cup ricotta cheese'},
-    'Cracker crumbs': {'Amount': '1 cup', 'Substitution': '1 cup bread crumbs OR 1 cup matzo meal OR 1 cup ground oats'},
-    'Half and Half': {'Amount': '1 cup', 'Substitution': '7/8 cup milk plus 1 tablespoon butter'},
-    'Heavy Cream': {'Amount': '1 cup', 'Substitution': '1 cup evaporated milk OR 3/4 cup milk plus 1/3 cup butter'},
-    'Light Cream': {'Amount': '1 cup', 'Substitution': '1 cup evaporated milk OR 3/4 cup milk plus 3 tablespoons butter'},
-    'Whipped Cream': {'Amount': '1 cup', 'Substitution': '1 cup frozen whipped topping, thawed'},
-    'Cream of tartar': {'Amount': '1 teaspoon', 'Substitution': '2 teaspoons lemon juice or vinegar'},
-    'Creme fraiche': {'Amount': '1 cup', 'Substitution': 'Combine 1 cup of heavy cream and 1 tablespoon of plain yogurt. Let stand for 6 hours at room temperature'},
-    'Egg': {'Amount': '1 whole (3 tablespoons or 1.7 oz)', 'Substitution': '2 1/2 tablespoons of powdered egg substitute plus 2 1/2 tablespoons water OR 1/4 cup liquid egg substitute OR 1/4 cup silken tofu pureed OR 3 tablespoons mayonnaise OR half a banana mashed with 1/2 teaspoon baking powder OR 1 tablespoon powdered flax seed soaked in 3 tablespoons water'},
-    'Evaporated milk': {'Amount': '1 cup', 'Substitution': '1 cup light cream'},
-    'Farmers cheese': {'Amount': '8 ounces', 'Substitution': '8 ounces dry cottage cheese OR 8 ounces creamed cottage cheese, drained'},
-    'Baking fats': {'Amount': '1 cup', 'Substitution': '1 cup applesauce OR 1 cup fruit puree'},
-    'Flour': {'Amount': '1 cup', 'Substitution': 'for bread: 1 cup all-purpose flour minus 2 tablespoons. For a cake: 1 cup all-purpose flour plus 1 teaspoon wheat gluten'},
-    'self-rising Flour': {'Amount': '1 cup', 'Substitution': '7/8 cup all-purpose flour plus 1 1/2 teaspoons baking powder and 1/2 teaspoon of salt'},
-    'Garlic': {'Amount': '1 clove', 'Substitution': '1/8 teaspoon garlic powder OR 1/2 teaspoon granulated garlic OR 1/2 teaspoon garlic salt, reduce salt in recipe'},
-    'Gelatin': {'Amount': '1 tablespoon, granulated', 'Substitution': '2 teaspoons agar agar'},
-    'Dry Ginger': {'Amount': '1 teaspoon', 'Substitution': '2 teaspoons chopped fresh ginger'},
-    'Fresh ginger': {'Amount': '1 teaspoon, minced', 'Substitution': '1/2 teaspoon ground dried ginger'},
-    'Green onion': {'Amount': '1/2 cup , chopped', 'Substitution': '1/2 cup chopped onion OR 1/2 cup chopped leek OR 1/2 cup chopped shallots'},
-    'Hazelnuts': {'Amount': '1 cup whole', 'Substitution': '1 cup macadamia nuts OR 1 cup almonds'},
-    'Herbs': {'Amount': '1 tablespoon chopped fresh', 'Substitution': '1 teaspoon (chopped or whole leaf) dried herbs'},
-    'Herring': {'Amount': '8 ounces', 'Substitution': '8 ounces of sardines'},
-    'Honey': {'Amount': '1 cup', 'Substitution': '1 1/4 cup white sugar plus 1/3 cup water OR 1 cup corn syrup OR 1 cup light treacle syrup'},
-    'Hot pepper sauce': {'Amount': '1 teaspoon', 'Substitution': '3/4 teaspoon cayenne pepper plus 1 teaspoon vinegar'},
-    'Lard': {'Amount': '1 cup', 'Substitution': '1 cup shortening OR 7/8 cup vegetable oil OR 1 cup butter'},
-    'Lemon grass': {'Amount': '2 fresh stalks', 'Substitution': '1 tablespoon lemon zest'},
-    'Lemon juice': {'Amount': '1 teaspoon', 'Substitution': '1/2 teaspoon vinegar OR 1 teaspoon white wine OR 1 teaspoon lime juice'},
-    'Lemon zest': {'Amount': '1 teaspoon', 'Substitution': '1/2 teaspoon lemon extract OR 2 tablespoons lemon juice'},
-    'Lime juice': {'Amount': '1 teaspoon', 'Substitution': '1 teaspoon vinegar OR 1 teaspoon white wine OR 1 teaspoon lemon juice'},
-    'Lime zest': {'Amount': '1 teaspoon', 'Substitution': '1 teaspoon lemon zest'},
-    'Macadamia nuts': {'Amount': '1 cup', 'Substitution': '1 cup almonds OR 1 cup hazelnuts'},
-    'Mace': {'Amount': '1 teaspoon', 'Substitution': '1 teaspoon nutmeg'},
-    'Margarine': {'Amount': '1 cup', 'Substitution': '1 cup shortening plus 1/2 teaspoon salt OR 1 cup butter OR 7/8 cup vegetable oil plus 1/2 teaspoon salt OR 7/8 cup lard plus 1/2 teaspoon salt'},
-    'Mayonnaise': {'Amount': '1 cup', 'Substitution': '1 cup sour cream OR 1 cup plain yogurt'},
-    'Whole milk': {'Amount': '1 cup', 'Substitution': '1 cup soy milk OR 1 cup rice milk OR 1 cup water or juice OR 1/4 cup dry milk powder plus 1 cup water OR 2/3 cup evaporated milk plus 1/3 cup water'},
-    'Mint': {'Amount': '1/4 cup chopped', 'Substitution': '1 tablespoon dried mint leaves'},
-    'Molasses': {'Amount': '1 cup', 'Substitution': 'Mix 3/4 cup brown sugar and 1 teaspoon cream of tartar'},
-    'Mustard: prepared': {'Amount': '1 tablespoon', 'Substitution': 'Mix together 1 tablespoon dried mustard, 1 teaspoon water, 1 teaspoon vinegar and 1 teaspoon sugar'},
-    'Onion': {'Amount': '1 cup, chopped', 'Substitution': '1 cup chopped green onions OR 1 cup chopped shallots OR 1 cup chopped leeks OR 1/4 cup dried minced onion OR 1/4 cup onion powder'},
-    'Orange juice': {'Amount': '1 tablespoon', 'Substitution': '1 tablespoon other citrus juice'},
-    'Orange zest': {'Amount': '1 tablespoon', 'Substitution': '1/2 teaspoon orange extract OR 1 teaspoon lemon juice'},
-    'Parmesan cheese': {'Amount': '1/2 cup, grated', 'Substitution': '1/2 cup grated Asiago cheese OR 1/2 cup grated Romano cheese'},
-    'Parsley': {'Amount': '1 tablespoon chopped fresh', 'Substitution': '1 tablespoon chopped fresh chervil OR 1 teaspoon dried parsley'},
-    'Pepperoni': {'Amount': '1 ounce', 'Substitution': '1 ounce salami'},
-    'Raisin': {'Amount': '1 cup', 'Substitution': '1 cup dried currants OR 1 cup dried cranberries OR 1 cup chopped pitted prunes'},
-    'Rice': {'Amount': '1 cup, cooked', 'Substitution': '1 cup cooked barley OR 1 cup cooked bulgur OR 1 cup cooked brown, White or wild rice'},
-    'Ricotta': {'Amount': '1 cup', 'Substitution': '1 cup dry cottage cheese OR 1 cup silken tofu'},
-    'Rum': {'Amount': '1 tablespoon', 'Substitution': '1/2 teaspoon rum extract, plus enough water to make 1 tablespoon'},
-    'Saffron': {'Amount': '1/4 teaspoon', 'Substitution': '1/4 teaspoon turmeric'},
-    'Salami': {'Amount': '1 ounce', 'Substitution': '1 ounce pepperoni'},
-    'Semisweet chocolate chips': {'Amount': '1 cup', 'Substitution': '1 cup chocolate candies OR 1 cup peanut butter or other flavored chips OR 1 cup chopped nuts OR 1 cup chopped dried fruit'},
-    'Chopped shallots': {'Amount': '1/2 cup', 'Substitution': '1/2 cup chopped onion OR 1/2 cup chopped leek OR 1/2 cup chopped green onion'},
-    'Shortening': {'Amount': '1 cup', 'Substitution': '1 cup butter OR 1 cup margarine minus 1/2 teaspoon salt from recipe'},
-    'Sour cream': {'Amount': '1 cup', 'Substitution': '1 cup plain yogurt OR 1 tablespoon lemon juice or vinegar plus enough cream to make 1 cup OR 3/4 cup buttermilk mixed with 1/3 cup butter'},
-    'Sour milk': {'Amount': '1 cup', 'Substitution': '1 tablespoon vinegar or lemon juice mixed with enough milk to make 1 cup: Let stand 5 minutes to thicken'},
-    'Soy sauce': {'Amount': '1/2 cup', 'Substitution': '1/4 cup Worcestershire sauce mixed with 1 tablespoon water'},
-    'Beef stock': {'Amount': '1 cup', 'Substitution': '1 cube beef or chicken bouillon dissolved in 1 cup water'},
-    'Chicken stock': {'Amount': '1 cup', 'Substitution': '1 cube beef or chicken bouillon dissolved in 1 cup water'},
-    'Sweetened condensed milk': {'Amount': '1 (14-ounce) can', 'Substitution': '3/4 cup white sugar mixed with 1/2 cup water and 1 1/8 cups dry powdered milk: Bring to a boil and cook, stirring frequently, until thickened, about 20 minutes'},
-    'Vegetable oil': {'Amount': '1 cup', 'Substitution': 'For Baking: 1 cup applesauce OR 1 cup fruit puree. For Frying: 1 cup lard OR 1 cup vegetable shortening'},
-    'Vinegar': {'Amount': '1 teaspoon', 'Substitution': '1 teaspoon lemon or lime juice OR 2 teaspoons white wine'},
-    'White sugar': {'Amount': '1 cup', 'Substitution': '1 cup brown sugar OR 1 1/4 cups confectioners\' sugar OR 3/4 cup honey OR 3/4 cup corn syrup'},
-    'Wine': {'Amount': '1 cup', 'Substitution': '1 cup chicken or beef broth OR 1 cup fruit juice mixed with 2 teaspoons vinegar OR 1 cup water'},
-    'Active dry yeast': {'Amount': '1 (.25-ounce) package', 'Substitution': '1 cake compressed yeast OR 2 1/2 teaspoons active dry yeast OR 2 1/2 teaspoons rapid rise yeast'},
-    'Yogurt': {'Amount': '1 cup', 'Substitution': '1 cup sour cream OR 1 cup buttermilk OR 1 cup sour milk'}
-}
 
 ### GLOBAL VARIABLES ###
 scraper = None
@@ -153,6 +66,101 @@ def parse_steps(instructions):
             print(annotated_step.text)
     parsed_steps = final_steps
     print("Finished")
+
+def sub_ingredients(sub_type, cuisine=None):
+    """
+    types are 'vegetarian', 'non-vegetarian', 'cuisine', 'healthy', 'unhealthy'
+    
+    """    
+        
+    # no need to generate new text
+    # just output 'substitute this for that, leave out this, etc.'
+    global ingredients_name
+    found_substitute = False
+    meats_flat = [item for sublist in meats.values() for item in sublist] # flatten the list of lists (meats.values())
+    meats_no_organs = [m for m in meats_flat if m not in meats["Organ"]]
+    spices_found = 0
+    for ing in ingredients_name:
+        if sub_type == 'vegetarian':
+            for meat in meats_flat: 
+                if meat in ing:  # check if meat is a substring of ingredient name
+                    found_substitute = True
+                    veg = random.choice(veg_substitutes)
+                    if 'sauce' in ing or 'broth' in ing:
+                        new_ing = ing.replace(meat, veg)  # replace the substring (e.g. beef broth becomes mushroom broth)
+                    else:
+                        new_ing = veg
+                    print(f'substitute {new_ing} for {ing}')
+        elif sub_type == 'non-vegetarian':
+            for veg in veg_substitutes:
+                if veg in ing:
+                    found_substitute = True
+                    print(f'substitute {random.choice(meats_no_organs)} for {ing}')
+        elif sub_type == 'cuisine':
+            if ing in spices:
+                spices_found += 1
+                found_substitute = True
+                sub = substitutions.get(ing.capitalize(), None)
+                if sub:
+                    if(sub['Substitution'].lower() in cuisine_spices[cuisine.capitalize()]):
+                        print('substitute ' +  sub['Substitution'] + 'for ' + sub['Amount'])
+                    else:
+                        print(f'substitute {random.choice(cuisine_spices[cuisine.capitalize()])} for {ing}')
+                    
+                else:
+                    print(f'substitute {random.choice(cuisine_spices[cuisine.capitalize()])} for {ing}')
+
+            for meat in meats_flat:
+                if meat in ing:
+                    found_substitute = True
+                    if 'broth' in ing:
+                        print(f'substitute {random.choice(cuisine_meats[cuisine.capitalize()])} broth for {ing}')
+                        break
+                    else:
+                        print(f'substitute {random.choice(cuisine_meats[cuisine.capitalize()])} for {ing}')
+                        break
+            
+                    
+        elif sub_type == 'healthy':
+            sub = healthy_subs.get(ing, None)
+            if sub:
+                found_substitute = True
+                print("You can substitute " + sub + " for " + ing)
+            else:
+               for sub in healthy_subs.keys():
+                   if re.search(r"\b" + re.escape(sub) + r"[\b|s\b]", ing):
+                        found_substitute = True
+                        new_ing = ing.replace(sub, healthy_subs[sub])
+                        print("You can substitute " + new_ing + " for " + ing)
+                        break
+        elif sub_type == 'unhealthy':
+            sub = unhealthy_subs.get(ing, None)
+            if sub:
+                found_substitute = True
+                print("You can substitute " + sub + " for " + ing)
+            else:
+               for sub in unhealthy_subs.keys():
+                   if re.search(r"\b" + re.escape(sub) + r"[\b|s\b]", ing):
+                        found_substitute = True
+                        new_ing = ing.replace(sub, unhealthy_subs[sub])
+                        print("You can substitute " + new_ing + " for " + ing)
+                        break
+                   
+    if((spices_found < 3) & (sub_type == 'cuisine')):
+        choices = []
+        while len(choices) < (3 - spices_found): 
+            choice = random.choice(cuisine_spices[cuisine.capitalize()])
+            if(choice not in choices):
+                choices.append(choice)
+                print(f'you may want to add additional spice: {choice}')
+                
+                    
+    if not found_substitute: print("already transformed, no substitutes found")
+
+def scale(factor):
+    # need to generate new text
+    global parsed_ingredients
+    pass
     
 #interaction outside of navigation and recipe retreval 
 #add current step interaction
@@ -239,7 +247,8 @@ def main():
                 "What temperature: Tells the temperature for the current step",
                 "How long: Tells the length of the current step", 
                 "When is it done: Tells the sign to look for",
-                "What can I substitute for <Ingredient>: Gives potential substutions"]
+                "What can I substitute for <Ingredient>: Gives potential substutions",
+                "Transform: modify the recipe by diet (veg or non-veg), cuisine, or scaling"]
     input_flag = 1
     url = input("Hello, this is RecipeBot. Please enter a url for a recipe: ")
     scrape(url)
@@ -286,6 +295,21 @@ def main():
         elif user == 'instructions':
             for i, step in enumerate(steps):
                 print(str(i + 1) + '. ', step)
+        elif user == 'transform':
+            choice = input("type 1 for vegetarian, 2 for non-vegetarian, 3 for cuisine, 4 for scaling, 5 for healty, 6 for unhealthy: ").strip()
+            if choice == '1':
+                sub_ingredients('vegetarian')
+            elif choice == '2':
+                sub_ingredients('non-vegetarian')
+            elif choice == '3':
+                cuisine = input("what cuisine are you interested in?").lower().strip()
+                sub_ingredients('cuisine', cuisine=cuisine)
+            elif choice == '5':
+                sub_ingredients('healthy')
+            elif choice == '6':
+                sub_ingredients('unhealthy')
+            else:
+                scale()
         elif user == 'help':
             for i, command in enumerate(commands):
                 print(str(i + 1) + '. ', command)
@@ -302,5 +326,34 @@ if __name__ == '__main__':
     main()
 
 
+
+# Meat: beef, chicken, pork, lamb, turkey, duck, venison, rabbit, bison, goat, veal, boar, camel.
+# Fish: salmon, tuna, cod, halibut, trout, mackerel, sardines, tilapia, catfish, sea bass, snapper, swordfish, and haddock.
+# Seafood: shrimp, crab, lobster, scallops, clams, oysters, and mussels.
+# Organ meats: liver, heart, kidney, and tripe.
+# Deli meats: ham, turkey, roast beef, pastrami, corned beef, and salami.
+# Sausages: bratwurst, chorizo, andouille, kielbasa, Italian sausage, and breakfast sausage, sausage.
+
+
+#cuisin subs
+#Jamaican jerk: allspice, nutmeg, black pepper, thyme, cayenne pepper, paprika, sugar, salt, garlic, and ginger
+#Mexican: annatto, dried oregano, cumin, clove, cinnamon, black pepper, allspice, and garlic
+#Cajun: paprika, mustard powder, garlic, black pepper, onion, dried oregano, cumin, caraway, crushed red pepper, cayenne, thyme, celery seed, and bay leaves
+#Indian: turmeric, cardamom, cinnamon, cloves, cumin, coriander, black pepper, curry powder, and nutmeg
+#Moroccan: cumin, ginger, turmeric, paprika, coriander, cinnamon, cardamom,
+
+
+#Tofu
+#Tempeh
+#Seitan (also known as wheat meat or wheat gluten)
+#Legumes (e.g. lentils, chickpeas, black beans)
+#Mushrooms (e.g. portobello, shiitake)
+#Quorn (a type of mycoprotein)
+#Textured vegetable protein (TVP)
+#Nutritional yeast (a source of vegan protein and B vitamins)
+#Eggplant
+#Jackfruit
+#Beyond patty
+#Tofu dog
 
 
