@@ -12,3 +12,5 @@
 * Troubleshooting:
    * If running into problems with a command, try to follow the formatting specified in "Help"
    * Not all websites are supported, so if a recipe is broken, try another website
+
+* Refer to our `requirements.txt` for all dependencies; we used Python 3.9
