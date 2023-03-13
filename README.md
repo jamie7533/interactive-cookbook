@@ -7,6 +7,7 @@
    * 'how to' and 'what is' question answering
    * asking for parameters specific to a certain step
    * asking for ingredient substitutions
+   * transformations: vegetarian/non-vegetarian, cuisine, scaling, healthy/unhealthy
 
 * Troubleshooting:
    * If running into problems with a command, try to follow the formatting specified in "Help"
