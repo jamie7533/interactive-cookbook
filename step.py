@@ -48,7 +48,7 @@ class Step:
     
     def get_step_time(self):
         time = ""
-        timeWords = ["second", "seconds", "minute", "minutes", "hour", "hours"]
+        timeWords = ["second", "seconds", "minute", "minutes", "hour", "hours", "day", "days"]
         for token in self.parse:
             if token.dep_ == "nummod" and token.head.text in timeWords:
                 if len(list(token.children)) > 0:
@@ -74,5 +74,6 @@ class Step:
         maskTime = [int(i) for i in self.time.split() if i.isdigit()]
         mask = maskTemp + maskTime
         nums = [i for i in nums if i not in mask]
+
         for num in nums:
-            self.text.replace(str(num) + " ", str(num*factor)+ " ")
+            self.text = self.text.replace(str(num) + " ", str(num*factor)+ " ")

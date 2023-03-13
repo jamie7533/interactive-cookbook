@@ -72,7 +72,6 @@ def sub_ingredients(sub_type, cuisine=None):
     types are 'vegetarian', 'non-vegetarian', 'cuisine', 'healthy', 'unhealthy'
     
     """    
-        
     # no need to generate new text
     # just output 'substitute this for that, leave out this, etc.'
     global ingredients_name
@@ -86,8 +85,10 @@ def sub_ingredients(sub_type, cuisine=None):
                 if meat in ing:  # check if meat is a substring of ingredient name
                     found_substitute = True
                     veg = random.choice(veg_substitutes)
-                    if 'sauce' in ing or 'broth' in ing:
+                    if 'broth' in ing:
                         new_ing = ing.replace(meat, veg)  # replace the substring (e.g. beef broth becomes mushroom broth)
+                    elif 'sauce' in ing:
+                        new_ing = ing.replace(meat, 'vegetarian')
                     else:
                         new_ing = veg
                     print(f'substitute {new_ing} for {ing}')
@@ -116,10 +117,12 @@ def sub_ingredients(sub_type, cuisine=None):
                     if 'broth' in ing:
                         print(f'substitute {random.choice(cuisine_meats[cuisine.capitalize()])} broth for {ing}')
                         break
+                    if 'sauce' in ing:
+                        print(f'substitute {random.choice(cuisine_meats[cuisine.capitalize()])} sauce for {ing}')
+                        break
                     else:
                         print(f'substitute {random.choice(cuisine_meats[cuisine.capitalize()])} for {ing}')
                         break
-            
                     
         elif sub_type == 'healthy':
             sub = healthy_subs.get(ing, None)
@@ -147,6 +150,7 @@ def sub_ingredients(sub_type, cuisine=None):
                         break
                    
     if((spices_found < 3) & (sub_type == 'cuisine')):
+        found_substitute = True
         choices = []
         while len(choices) < (3 - spices_found): 
             choice = random.choice(cuisine_spices[cuisine.capitalize()])
@@ -157,9 +161,26 @@ def sub_ingredients(sub_type, cuisine=None):
                     
     if not found_substitute: print("already transformed, no substitutes found")
 
-def scale(factor):
+def scale_ingredients(factor):
     # need to generate new text
-    global parsed_ingredients
+    global parsed_ingredients, ingredients
+    for i in range(len(parsed_steps)):
+        parsed_steps[i].update_amounts(factor)
+        steps[i] = parsed_steps[i].text
+    for i in range(len(ingredients)):
+        oldQ = parsed_ingredients[i]['quantity']
+        try:
+            newQ = float(oldQ)*factor
+            if newQ.is_integer():
+                newQ = int(newQ)
+            parsed_ingredients[i]['quantity'] = newQ
+            parsed_ingredients[i]['sentence'] = parsed_ingredients[i]['sentence'].replace(str(oldQ), str(newQ), 1)
+            ingredients[i] = parsed_ingredients[i]['sentence']
+        except:
+            pass
+    print('The new list of ingredients: ')
+    for i, ing in enumerate(ingredients):
+        print(str(i + 1) + '. ', ing)
     pass
     
 #interaction outside of navigation and recipe retreval 
@@ -250,7 +271,7 @@ def main():
                 "What can I substitute for <Ingredient>: Gives potential substutions",
                 "Transform: modify the recipe by diet (veg or non-veg), cuisine, or scaling"]
     input_flag = 1
-    url = input("Hello, this is RecipeBot. Please enter a url for a recipe: ")
+    url = input("Hello, this is RecipeBot. Please enter a url for a recipe: ").strip()
     scrape(url)
     print("Enter \'help\' for a list of commands")
     print("Enter \'Start\' to start the recipe from the first step")
@@ -296,20 +317,24 @@ def main():
             for i, step in enumerate(steps):
                 print(str(i + 1) + '. ', step)
         elif user == 'transform':
-            choice = input("type 1 for vegetarian, 2 for non-vegetarian, 3 for cuisine, 4 for scaling, 5 for healty, 6 for unhealthy: ").strip()
+            choice = input("type 1 for vegetarian, 2 for non-vegetarian, 3 for cuisine, 4 for scaling, 5 for healthy, 6 for unhealthy: ").strip()
             if choice == '1':
                 sub_ingredients('vegetarian')
             elif choice == '2':
                 sub_ingredients('non-vegetarian')
             elif choice == '3':
-                cuisine = input("what cuisine are you interested in?").lower().strip()
+                cuisine = input("what cuisine are you interested in? ").lower().strip()
+                while cuisine.capitalize() not in cuisine_spices.keys():
+                    print("Sorry, that cuisine is not supported")
+                    cuisine = input("what cuisine are you interested in? ").lower().strip()
                 sub_ingredients('cuisine', cuisine=cuisine)
+            elif choice == '4':
+                factor = input('What factor would you like to scale by? ')
+                scale_ingredients(float(factor))
             elif choice == '5':
                 sub_ingredients('healthy')
             elif choice == '6':
                 sub_ingredients('unhealthy')
-            else:
-                scale()
         elif user == 'help':
             for i, command in enumerate(commands):
                 print(str(i + 1) + '. ', command)
